@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::io::{self, Read, Write};
+use std::path::Path;
 
 #[derive(Debug)]
 struct Book {
@@ -8,7 +10,6 @@ struct Book {
 }
 
 impl Book {
-    // Constructor-like method to create a new Book instance
     fn new(title: &str, author: &str, year: u32) -> Book {
         Book {
             title: String::from(title),
@@ -17,73 +18,76 @@ impl Book {
         }
     }
 
-    // Method to display the book details
     fn display(&self) {
         println!("Title: {}\nAuthor: {}\nYear: {}\n", self.title, self.author, self.year);
     }
-
-    // Method to check if the book is a classic (published before 1950)
-    fn is_classic(&self) -> bool {
-        self.year < 1950
-    }
-
-    // Getter method for the book's title
-    fn get_title(&self) -> &str {
-        &self.title
-    }
 }
 
-fn main() {
-    // Step 1: Creating a Vec to store multiple Book objects
-    let mut library: Vec<Book> = Vec::new();
+fn main() -> io::Result<()> {
+    // Step 1: Read from a file
+    let path = Path::new("books.txt");
+    let mut file = match File::open(path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error opening file: {}", e);
+            return Err(e);
+        }
+    };
 
-    // Step 2: Creating books using the new method and adding them to the Vec
+    let mut contents = String::new();
+    match file.read_to_string(&mut contents) {
+        Ok(_) => println!("File contents:\n{}", contents),
+        Err(e) => {
+            eprintln!("Error reading file: {}", e);
+            return Err(e);
+        }
+    }
+
+    // Step 2: Create some Book instances to write to a new file
     let book1 = Book::new("The Great Gatsby", "F. Scott Fitzgerald", 1925);
     let book2 = Book::new("1984", "George Orwell", 1949);
-    let book3 = Book::new("The Rust Book", "Steve Klabnik & Carol Nichols", 2018);
+    let book3 = Book::new("The Catcher in the Rye", "J.D. Salinger", 1951);
 
-    library.push(book1);
-    library.push(book2);
-    library.push(book3);
+    // Step 3: Write to a new file
+    let write_path = Path::new("new_books.txt");
+    let mut new_file = match OpenOptions::new().write(true).create(true).open(write_path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error opening file for writing: {}", e);
+            return Err(e);
+        }
+    };
 
-    // Step 3: Display all books in the library
-    println!("Library Contents (using Vec):");
-    for book in &library {
-        book.display();
+    let books = vec![book1, book2, book3];
+    for book in books {
+        match writeln!(new_file, "{} by {} ({}).", book.title, book.author, book.year) {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("Error writing to file: {}", e);
+                return Err(e);
+            }
+        }
     }
 
-    // Step 4: Creating a HashMap to store books with the title as the key
-    let mut book_map: HashMap<String, Book> = HashMap::new();
+    // Step 4: Print out the file contents again to ensure writing was successful
+    println!("\nSuccessfully wrote to the new file. Here is the content:");
 
-    // Step 5: Adding books to the HashMap
-    let book4 = Book::new("Moby Dick", "Herman Melville", 1851);
-    let book5 = Book::new("The Catcher in the Rye", "J.D. Salinger", 1951);
-
-    book_map.insert(book4.title.clone(), book4);
-    book_map.insert(book5.title.clone(), book5);
-
-    // Step 6: Retrieving a book by title using HashMap
-    let book_title = "Moby Dick";
-    println!("\nRetrieving book by title '{}':", book_title);
-    match book_map.get(book_title) {
-        Some(book) => book.display(),
-        None => println!("Book not found."),
+    let mut new_file_contents = String::new();
+    let mut new_file = match File::open(write_path) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error reopening the new file: {}", e);
+            return Err(e);
+        }
+    };
+    
+    match new_file.read_to_string(&mut new_file_contents) {
+        Ok(_) => println!("{}", new_file_contents),
+        Err(e) => {
+            eprintln!("Error reading the new file: {}", e);
+            return Err(e);
+        }
     }
 
-    // Checking if the books in the map are classics
-    println!("\nChecking if books in the map are classics:");
-    for (title, book) in &book_map {
-        println!("Is '{}' a classic? {}", title, book.is_classic());
-    }
-
-    // Step 7: Using slices to access portions of the library (Vec)
-    println!("\nSlicing the library to get the first two books:");
-    let slice_of_books: &[Book] = &library[0..2];  // Slicing the Vec to get the first two books
-    for book in slice_of_books {
-        book.display();
-    }
-
-    // Step 8: Demonstrating getter method
-    let book_title = library[0].get_title();
-    println!("\nThe title of the first book in the library is '{}'.", book_title);
+    Ok(())
 }
