@@ -26,6 +26,11 @@ impl Book {
     fn is_classic(&self) -> bool {
         self.year < 1950
     }
+
+    // Getter method for the book's title
+    fn get_title(&self) -> &str {
+        &self.title
+    }
 }
 
 fn main() {
@@ -70,4 +75,15 @@ fn main() {
     for (title, book) in &book_map {
         println!("Is '{}' a classic? {}", title, book.is_classic());
     }
+
+    // Step 7: Using slices to access portions of the library (Vec)
+    println!("\nSlicing the library to get the first two books:");
+    let slice_of_books: &[Book] = &library[0..2];  // Slicing the Vec to get the first two books
+    for book in slice_of_books {
+        book.display();
+    }
+
+    // Step 8: Demonstrating getter method
+    let book_title = library[0].get_title();
+    println!("\nThe title of the first book in the library is '{}'.", book_title);
 }
