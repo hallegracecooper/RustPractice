@@ -4,7 +4,7 @@ This project is a **Task Manager CLI** written in **Rust**, designed to help use
 
 The purpose of writing this software is to **gain hands-on experience with Rust** and deepen my understanding of **memory management, vector handling, and command-line input processing**. By building this project, I have strengthened my ability to write clean, modular, and efficient Rust programs.
 
-[Software Demo Video](http://youtube.link.goes.here)
+[Software Demo Video](https://youtu.be/iBnaxfCPLSM)
 
 # Development Environment
 
