@@ -1,93 +1,55 @@
-use std::fs::{File, OpenOptions};
-use std::io::{self, Read, Write};
-use std::path::Path;
+use std::io;
+mod task;
+mod task_manager;
+use task_manager::TaskManager;
 
-#[derive(Debug)]
-struct Book {
-    title: String,
-    author: String,
-    year: u32,
-}
+fn main() {
+    let mut manager = TaskManager::new();
 
-impl Book {
-    fn new(title: &str, author: &str, year: u32) -> Book {
-        Book {
-            title: String::from(title),
-            author: String::from(author),
-            year,
-        }
-    }
+    loop {
+        println!("\nTask Manager:");
+        println!("1. Add Task");
+        println!("2. List Tasks");
+        println!("3. Exit");
+        println!("Enter your choice: ");
 
-    fn display(&self) {
-        println!("Title: {}\nAuthor: {}\nYear: {}\n", self.title, self.author, self.year);
-    }
-}
-
-fn main() -> io::Result<()> {
-    // Step 1: Read from a file
-    let path = Path::new("books.txt");
-    let mut file = match File::open(path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Error opening file: {}", e);
-            return Err(e);
-        }
-    };
-
-    let mut contents = String::new();
-    match file.read_to_string(&mut contents) {
-        Ok(_) => println!("File contents:\n{}", contents),
-        Err(e) => {
-            eprintln!("Error reading file: {}", e);
-            return Err(e);
-        }
-    }
-
-    // Step 2: Create some Book instances to write to a new file
-    let book1 = Book::new("The Great Gatsby", "F. Scott Fitzgerald", 1925);
-    let book2 = Book::new("1984", "George Orwell", 1949);
-    let book3 = Book::new("The Catcher in the Rye", "J.D. Salinger", 1951);
-
-    // Step 3: Write to a new file
-    let write_path = Path::new("new_books.txt");
-    let mut new_file = match OpenOptions::new().write(true).create(true).open(write_path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Error opening file for writing: {}", e);
-            return Err(e);
-        }
-    };
-
-    let books = vec![book1, book2, book3];
-    for book in books {
-        match writeln!(new_file, "{} by {} ({}).", book.title, book.author, book.year) {
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("Error writing to file: {}", e);
-                return Err(e);
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read input");
+        let choice: u32 = match input.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Invalid input. Please enter a number.");
+                continue;
             }
+        };
+
+        match choice {
+            1 => {
+                println!("Enter task title:");
+                let mut title = String::new();
+                io::stdin().read_line(&mut title).expect("Failed to read title");
+
+                println!("Enter task description:");
+                let mut description = String::new();
+                io::stdin().read_line(&mut description).expect("Failed to read description");
+
+                manager.add_task(title.trim(), description.trim());
+                println!("Task added!");
+            }
+            2 => {
+                println!("\nTask List:");
+                for task in manager.list_tasks() {
+                    println!(
+                        "ID: {}, Title: {}, Description: {}, Completed: {}",
+                        task.id, task.title, task.description, task.completed
+                    );
+                }
+            }
+            3 => {
+                println!("Exiting Task Manager.");
+                break;
+            }
+            _ => println!("Invalid choice. Please enter a valid option."),
         }
     }
-
-    // Step 4: Print out the file contents again to ensure writing was successful
-    println!("\nSuccessfully wrote to the new file. Here is the content:");
-
-    let mut new_file_contents = String::new();
-    let mut new_file = match File::open(write_path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Error reopening the new file: {}", e);
-            return Err(e);
-        }
-    };
-    
-    match new_file.read_to_string(&mut new_file_contents) {
-        Ok(_) => println!("{}", new_file_contents),
-        Err(e) => {
-            eprintln!("Error reading the new file: {}", e);
-            return Err(e);
-        }
-    }
-
-    Ok(())
 }
